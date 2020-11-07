@@ -42,10 +42,11 @@ class _HomeState extends State<Home> {
                 } else if (notifier.state == NotifierState.loading) {
                   return CircularProgressIndicator();
                 } else {
-                  return notifier.post.fold(
-                    (failure) => StyledText(failure.toString()),
-                    (post) => StyledText(post.toString()),
-                  );
+                  if (notifier.failure != null) {
+                    return StyledText(notifier.failure.toString());
+                  } else {
+                    return StyledText(notifier.post.toString());
+                  }
                 }
               },
             ),
