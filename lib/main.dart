@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:proper_error_handling_tutorial/post_change_notifier.dart';
-import 'package:provider/provider.dart';
 
 import 'post_service.dart';
 
@@ -11,10 +9,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Material App',
-      home: ChangeNotifierProvider(
-        create: (_) => PostChangeNotifier(),
-        child: Home(),
-      ),
+      home: Home(),
     );
   }
 }
@@ -25,6 +20,9 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final postService = PostService();
+  Future<Post> postFuture;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,25 +33,28 @@ class _HomeState extends State<Home> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            Consumer<PostChangeNotifier>(
-              builder: (_, notifier, __) {
-                if (notifier.state == NotifierState.initial) {
-                  return StyledText('Press the button 👇');
-                } else if (notifier.state == NotifierState.loading) {
+            FutureBuilder<Post>(
+              future: postFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  final error = snapshot.error;
+                  return StyledText(error.toString());
+                } else if (snapshot.hasData) {
+                  final post = snapshot.data;
+                  return StyledText(post.toString());
                 } else {
-                  if (notifier.failure != null) {
-                    return StyledText(notifier.failure.toString());
-                  } else {
-                    return StyledText(notifier.post.toString());
-                  }
+                  return StyledText('Press the button 👇');
                 }
               },
             ),
             RaisedButton(
               child: Text('Get Post'),
               onPressed: () async {
-                Provider.of<PostChangeNotifier>(context).getOnePost();
+                setState(() {
+                  postFuture = postService.getOnePost();
+                });
               },
             ),
           ],
